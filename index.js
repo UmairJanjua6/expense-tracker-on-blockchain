@@ -157,5 +157,21 @@ const handleExpenseEvent = async() => {
 	$('#money-minus').html("$" + returnExpense.expense);
 };
 
+const handleIncomeEvent = async() => {
+	let getIncomeEvents = await contract.getPastEvents("getIncome", {
+		fromBlock: 0,
+		toBlock: "latest"
+	});
+
+	for(let i= 0; i< getIncomeEvents.length; i++) {
+		let filtered = getIncomeEvents[i].returnValues;
+		var returnIncome = {
+			income: filtered.income,
+		}
+	}
+	$('#money-plus').html("$" + returnIncome.income);
+};
+
 handleBalanceEvent();
 handleExpenseEvent();
+handleIncomeEvent();
