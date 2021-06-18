@@ -125,3 +125,21 @@ const ABI = [
 const address = "0x96a2525aD9357bB1E7E9E05c2aE8442441E2D4DE";
 
 var contract = new web3.eth.Contract (ABI, address);
+
+
+const handleBalanceEvent = async() => {
+	let getBalanceEvents = await contract.getPastEvents("getBalance", {
+		fromBlock: 0,
+		toBlock: "latest"
+	});
+
+	for(let i= 0; i< getBalanceEvents.length; i++) {
+		let filtered = getBalanceEvents[i].returnValues;
+		var returnBalance = {
+			balance: filtered.balance,
+		}
+	}
+	$('#balance').html("$" + returnBalance.balance);
+};
+
+handleBalanceEvent();
