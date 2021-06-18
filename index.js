@@ -142,4 +142,20 @@ const handleBalanceEvent = async() => {
 	$('#balance').html("$" + returnBalance.balance);
 };
 
+const handleExpenseEvent = async() => {
+	let getExpenseEvents = await contract.getPastEvents("getExpense", {
+		fromBlock: 0,
+		toBlock: "latest"
+	});
+
+	for(let i= 0; i< getExpenseEvents.length; i++) {
+		let filtered = getExpenseEvents[i].returnValues;
+		var returnExpense = {
+			expense: filtered.expense,
+		}
+	}
+	$('#money-minus').html("$" + returnExpense.expense);
+};
+
 handleBalanceEvent();
+handleExpenseEvent();
