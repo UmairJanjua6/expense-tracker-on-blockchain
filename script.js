@@ -25,7 +25,7 @@ const addTransaction = async(e) => {
       text: text.value,
       amount: +amount.value
     };
-
+    addTransactionFunc();
     transactions.push(transaction);
 
     addTransactionDOM(transaction);
@@ -37,6 +37,20 @@ const addTransaction = async(e) => {
     text.value = '';
     amount.value = '';
     
+  }
+}
+const transactionButton = document.querySelector('.transaction');
+transactionButton.addEventListener('click', () => {
+  
+  addTransactionFunc();
+});
+async function addTransactionFunc() {
+  console.log("data: ", transaction.id, transaction.text, transaction.amount);
+  try {
+    const receipt = await contract.methods.addTransaction(transaction.id, transaction.text, transaction.amount).send({from: accounts[0]});
+    console.log("receipt: " + receipt);
+  } catch (err) {
+    console.log("error", err);
   }
 }
 
