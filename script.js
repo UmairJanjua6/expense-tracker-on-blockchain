@@ -14,7 +14,7 @@ let transactions =
   localStorage.getItem('transactions') !== null ? localStorageTransactions : [];
 
 // Add transaction
-function addTransaction(e) {
+const addTransaction = async(e) => {
   e.preventDefault();
 
   if (text.value.trim() === '' || amount.value.trim() === '') {
@@ -36,6 +36,7 @@ function addTransaction(e) {
 
     text.value = '';
     amount.value = '';
+    
   }
 }
 
@@ -112,15 +113,22 @@ init();
 
 form.addEventListener('submit', addTransaction);
 
-if( typeof web3 !== 'undefined') {
-	web3 = new Web3(web3.currentProvider);
-}
-else {
-	web3 = new Web3(new Web3.providers.HttpProvider("https://ropsten.infura.io/v3/2486136c6c9846278fe46acadc814e35"));
-}
+//web3 functionality
 
-web3.eth.defaultAccount = web3.eth.accounts[0]; 
+// connect wallet
+const ethereumButton = document.querySelector('.enableEthereumButton');
+const showAccount = document.querySelector('.showAccount');
 
+ethereumButton.addEventListener('click', () => {
+  
+  getAccount();
+});
+
+async function getAccount() {
+  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  const account = accounts[0];
+  showAccount.innerHTML = account;
+}
 const ABI = [
 	{
 		"anonymous": false,
@@ -284,6 +292,8 @@ const handleIncomeEvent = async() => {
 		}
 	}
 	$('#money-plus').html("$" + returnIncome.income);
+  console.log("web3: ", web3);
+  console.log("ethereum: ", window.ethereum);
 };
 
 handleBalanceEvent();
