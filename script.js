@@ -1,3 +1,4 @@
+
 const balance = document.getElementById('balance');
 const money_plus = document.getElementById('money-plus');
 const money_minus = document.getElementById('money-minus');
@@ -5,6 +6,8 @@ const list = document.getElementById('list');
 const form = document.getElementById('form');
 const text = document.getElementById('text');
 const amount = document.getElementById('amount');
+let contract;
+let accounts;
 
 const localStorageTransactions = JSON.parse(
   localStorage.getItem('transactions')
@@ -25,7 +28,7 @@ const addTransaction = async(e) => {
       text: text.value,
       amount: +amount.value
     };
-    addTransactionFunc();
+    addTransactionFunc(transaction.id, transaction.text, transaction.amount);
     transactions.push(transaction);
 
     addTransactionDOM(transaction);
@@ -39,15 +42,10 @@ const addTransaction = async(e) => {
     
   }
 }
-const transactionButton = document.querySelector('.transaction');
-transactionButton.addEventListener('click', () => {
-  
-  addTransactionFunc();
-});
-async function addTransactionFunc() {
-  console.log("data: ", transaction.id, transaction.text, transaction.amount);
+async function addTransactionFunc(id, text, value) {
+  console.log("data: ", id, text, amount);
   try {
-    const receipt = await contract.methods.addTransaction(transaction.id, transaction.text, transaction.amount).send({from: accounts[0]});
+    const receipt = await contract.methods.addTransaction(id, text, value).send({from: accounts[0]});
     console.log("receipt: " + receipt);
   } catch (err) {
     console.log("error", err);
@@ -128,61 +126,7 @@ init();
 form.addEventListener('submit', addTransaction);
 
 //web3 functionality
-
-// connect wallet
-const ethereumButton = document.querySelector('.enableEthereumButton');
-const showAccount = document.querySelector('.showAccount');
-
-ethereumButton.addEventListener('click', () => {
-  
-  getAccount();
-});
-
-async function getAccount() {
-  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-  const account = accounts[0];
-  showAccount.innerHTML = account;
-}
 const ABI = [
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "int256",
-				"name": "balance",
-				"type": "int256"
-			}
-		],
-		"name": "getBalance",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "int256",
-				"name": "expense",
-				"type": "int256"
-			}
-		],
-		"name": "getExpense",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "int256",
-				"name": "income",
-				"type": "int256"
-			}
-		],
-		"name": "getIncome",
-		"type": "event"
-	},
 	{
 		"anonymous": false,
 		"inputs": [
@@ -255,61 +199,89 @@ const ABI = [
 		],
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getBalance",
+		"outputs": [
+			{
+				"internalType": "int256",
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getExpense",
+		"outputs": [
+			{
+				"internalType": "int256",
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getIncome",
+		"outputs": [
+			{
+				"internalType": "int256",
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	}
 ]
 
-const address = "0x96a2525aD9357bB1E7E9E05c2aE8442441E2D4DE";
+const address = "0x318d3cEC81AB9016758708d4C1AFc2Ec92D7a36F";
 
-var contract = new web3.eth.Contract (ABI, address);
+// connect wallet
 
 
-const handleBalanceEvent = async() => {
-	let getBalanceEvents = await contract.getPastEvents("getBalance", {
-		fromBlock: 0,
-		toBlock: "latest"
-	});
-
-	for(let i= 0; i< getBalanceEvents.length; i++) {
-		let filtered = getBalanceEvents[i].returnValues;
-		var returnBalance = {
-			balance: filtered.balance,
+$(document).ready (async function getAccount() {
+	try {
+		console.log ('Web3 = ', Web3);
+		console.log ('Web3.givenProvider = ', Web3.givenProvider.chainId);
+		if (Web3.givenProvider) {
+		  const web3 = new Web3 (Web3.givenProvider);
+		  await Web3.givenProvider.enable ();
+		  contract = new web3.eth.Contract(ABI, address);
+		  accounts = await web3.eth.getAccounts();
 		}
-	}
-	$('#balance').html("$" + returnBalance.balance);
+	  } catch (error) {
+		console.log ('Error in loading Web3 = ', error);
+		if (error.code === 4001) {
+		}
+	  }
+
+	  const ethereumButton = document.querySelector('.enableEthereumButton');
+const showAccount = document.querySelector('.showAccount');
+
+ethereumButton.addEventListener('click', () => {
+  console.log("address: ", accounts);
+});
+
+const getBalance = async() => {
+	try {
+ const balance = await contract.methods.getBalance().call({from: accounts[0]});
+ $('#balance').html("$" + balance);
+ console.log("balance: " + balance);
+ console.log("contract: " + contract);
+	} catch (error) {
+		console.log("balance error: " + error);
+	} 
 };
 
-const handleExpenseEvent = async() => {
-	let getExpenseEvents = await contract.getPastEvents("getExpense", {
-		fromBlock: 0,
-		toBlock: "latest"
-	});
+const transactionBtn = document.querySelector('.transaction');
 
-	for(let i= 0; i< getExpenseEvents.length; i++) {
-		let filtered = getExpenseEvents[i].returnValues;
-		var returnExpense = {
-			expense: filtered.expense,
-		}
-	}
-	$('#money-minus').html("$" + returnExpense.expense);
-};
-
-const handleIncomeEvent = async() => {
-	let getIncomeEvents = await contract.getPastEvents("getIncome", {
-		fromBlock: 0,
-		toBlock: "latest"
-	});
-
-	for(let i= 0; i< getIncomeEvents.length; i++) {
-		let filtered = getIncomeEvents[i].returnValues;
-		var returnIncome = {
-			income: filtered.income,
-		}
-	}
-	$('#money-plus').html("$" + returnIncome.income);
-  console.log("web3: ", web3);
-  console.log("ethereum: ", window.ethereum);
-};
-
-handleBalanceEvent();
-handleExpenseEvent();
-handleIncomeEvent();
+transactionBtn.addEventListener('click', () => {
+	getBalance();
+})
