@@ -268,15 +268,35 @@ const showAccount = document.querySelector('.showAccount');
 ethereumButton.addEventListener('click', () => {
   console.log("address: ", accounts);
 });
+});
 
 const getBalance = async() => {
 	try {
  const balance = await contract.methods.getBalance().call({from: accounts[0]});
  $('#balance').html("$" + balance);
  console.log("balance: " + balance);
- console.log("contract: " + contract);
 	} catch (error) {
 		console.log("balance error: " + error);
+	} 
+};
+
+const getExpense = async() => {
+	try {
+ const expense = await contract.methods.getExpense().call({from: accounts[0]});
+ $('#money-minus').html("$" + expense);
+ console.log("expense: " + expense);
+	} catch (error) {
+		console.log("expense error: " + error);
+	} 
+};
+
+const getIncome = async() => {
+	try {
+ const income = await contract.methods.getIncome().call({from: accounts[0]});
+ $('#money-plus').html("$" + income);
+ console.log("income: " + income);
+	} catch (error) {
+		console.log("income error: " + error);
 	} 
 };
 
@@ -284,4 +304,6 @@ const transactionBtn = document.querySelector('.transaction');
 
 transactionBtn.addEventListener('click', () => {
 	getBalance();
+	getExpense();
+	getIncome();
 })
