@@ -8,122 +8,8 @@ const text = document.getElementById('text');
 const amount = document.getElementById('amount');
 let contract;
 let accounts;
-
-const localStorageTransactions = JSON.parse(
-  localStorage.getItem('transactions')
-);
-
-let transactions =
-  localStorage.getItem('transactions') !== null ? localStorageTransactions : [];
-
-// Add transaction
-const addTransaction = async(e) => {
-  e.preventDefault();
-
-  if (text.value.trim() === '' || amount.value.trim() === '') {
-    alert('Please add a text and amount');
-  } else {
-    const transaction = {
-      id: generateID(),
-      text: text.value,
-      amount: +amount.value
-    };
-    addTransactionFunc(transaction.id, transaction.text, transaction.amount);
-    transactions.push(transaction);
-
-    addTransactionDOM(transaction);
-
-    updateValues();
-
-    updateLocalStorage();
-
-    text.value = '';
-    amount.value = '';
-    
-  }
-}
-async function addTransactionFunc(id, text, value) {
-  console.log("data: ", id, text, amount);
-  try {
-    const receipt = await contract.methods.addTransaction(id, text, value).send({from: accounts[0]});
-    console.log("receipt: " + receipt);
-  } catch (err) {
-    console.log("error", err);
-  }
-}
-
-// Generate random ID
-function generateID() {
-  return Math.floor(Math.random() * 100000000);
-}
-
-// Add transactions to DOM list
-function addTransactionDOM(transaction) {
-  // Get sign
-  const sign = transaction.amount < 0 ? '-' : '+';
-
-  const item = document.createElement('li');
-
-  // Add class based on value
-  item.classList.add(transaction.amount < 0 ? 'minus' : 'plus');
-
-  item.innerHTML = `
-    ${transaction.text} <span>${sign}${Math.abs(
-    transaction.amount
-  )}</span> <button class="delete-btn" onclick="removeTransaction(${
-    transaction.id
-  })">x</button>
-  `;
-
-  list.appendChild(item);
-}
-
-// Update the balance, income and expense
-function updateValues() {
-  const amounts = transactions.map(transaction => transaction.amount);
-
-  const total = amounts.reduce((acc, item) => (acc += item), 0).toFixed(2);
-
-  const income = amounts
-    .filter(item => item > 0)
-    .reduce((acc, item) => (acc += item), 0)
-    .toFixed(2);
-
-  const expense = (
-    amounts.filter(item => item < 0).reduce((acc, item) => (acc += item), 0) *
-    -1
-  ).toFixed(2);
-
-  balance.innerText = `$${total}`;
-  money_plus.innerText = `$${income}`;
-  money_minus.innerText = `$${expense}`;
-}
-
-// Remove transaction by ID
-function removeTransaction(id) {
-  transactions = transactions.filter(transaction => transaction.id !== id);
-
-  updateLocalStorage();
-
-  init();
-}
-
-// Update local storage transactions
-function updateLocalStorage() {
-  localStorage.setItem('transactions', JSON.stringify(transactions));
-}
-
-// Init app
-function init() {
-  list.innerHTML = '';
-
-  transactions.forEach(addTransactionDOM);
-  updateValues();
-}
-
-init();
-
-form.addEventListener('submit', addTransaction);
+let txData = [];
+let txArray = [];
 
 //web3 functionality
 const ABI = [
@@ -238,10 +124,59 @@ const ABI = [
 		],
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getIndexArray",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "getTransaction",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "text",
+						"type": "string"
+					},
+					{
+						"internalType": "int256",
+						"name": "amount",
+						"type": "int256"
+					}
+				],
+				"internalType": "struct ExpenseTracker.Transaction",
+				"name": "txData",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	}
 ]
 
-const address = "0x318d3cEC81AB9016758708d4C1AFc2Ec92D7a36F";
+const address = "0xA6Cf72617Ec1F914894eBEbe8246e52d53E5E25c";
 
 // connect wallet
 
@@ -262,12 +197,13 @@ $(document).ready (async function getAccount() {
 		}
 	  }
 
-	  const ethereumButton = document.querySelector('.enableEthereumButton');
-const showAccount = document.querySelector('.showAccount');
-
-ethereumButton.addEventListener('click', () => {
-  console.log("address: ", accounts);
-});
+	  const listBtn = document.querySelector('.lisst');
+	  listBtn.addEventListener('click', () => {
+		init();
+		console.log("address: ", accounts);
+		console.log("arR: ", txArray);
+		txArray.forEach(addTransactionDOM);
+		});
 });
 
 const getBalance = async() => {
@@ -276,7 +212,7 @@ const getBalance = async() => {
  $('#balance').html("$" + balance);
  console.log("balance: " + balance);
 	} catch (error) {
-		console.log("balance error: " + error);
+		console.log("balance error: ", error);
 	} 
 };
 
@@ -300,10 +236,116 @@ const getIncome = async() => {
 	} 
 };
 
+
+const getTransactionData = async() => {
+	try{
+		const idArray = await contract.methods.getIndexArray().call({from: accounts[0]});
+		for(let i = 0; i < idArray.length; i++) {
+			txData[i] = await contract.methods.getTransaction(idArray[i]).call({from: accounts[0]});
+			console.log("txData: " + txData[i].id);
+		}
+		txArray.push(txData);
+console.log("txArray: " + txArray);
+	} catch {
+		console.log("tx error: ", error);
+	}
+}
+
+const deleteTransaction = async(id) => {
+	
+	console.log("id: ", id);
+try {
+	const deleteTx = await contract.methods.deleteTransaction(id).send({from: accounts[0]});
+} catch (error) {
+	console.log("delete transaction error: " + error);
+}
+}
+
 const transactionBtn = document.querySelector('.transaction');
 
 transactionBtn.addEventListener('click', () => {
 	getBalance();
 	getExpense();
 	getIncome();
+	getTransactionData();
 })
+
+let transactions = [];
+
+// Add transaction
+const addTransaction = async(e) => {
+  e.preventDefault();
+
+  if (text.value.trim() === '' || amount.value.trim() === '') {
+    alert('Please add a text and amount');
+  } else {
+    const transaction = {
+      id: generateID(),
+      text: text.value,
+      amount: +amount.value
+    };
+    addTransactionFunc(transaction.id, transaction.text, transaction.amount);
+    transactions.push(transaction);
+
+    // updateValues();
+
+    // updateLocalStorage();
+
+    text.value = '';
+    amount.value = '';
+    
+  }
+}
+async function addTransactionFunc(id, text, value) {
+  console.log("data: ", id, text, amount);
+  try {
+    const receipt = await contract.methods.addTransaction(id, text, value).send({from: accounts[0]});
+    console.log("receipt: " + receipt);
+  } catch (err) {
+    console.log("error", err);
+  }
+}
+
+// Generate random ID
+function generateID() {
+  return Math.floor(Math.random() * 100000000);
+}
+
+// Add transactions to DOM list
+function addTransactionDOM(txData) {
+console.log("txDataaa: ", txData);
+console.log("data length: ", txData.length);
+	for(let i = 0; i < txData.length; i++) {
+  // Get sign
+  const sign = txData.amount < 0 ? '-' : '+';
+  const item = document.createElement('li');
+
+  // Add class based on value
+  item.classList.add(txData[i].amount < 0 ? 'minus' : 'plus');
+
+  item.innerHTML = `
+    ${txData[i].text} <span>${sign}${Math.abs(
+		txData[i].amount
+  )}</span> <button class="delete-btn" onclick="deleteTransaction(${
+    txData[i].id
+  })">x</button>
+  `;
+
+  list.appendChild(item);
+}
+}
+
+// Remove transaction by ID
+function removeTransaction(id) {
+  transactions = transactions.filter(transaction => transaction.id !== id);
+
+  init();
+}
+
+// Init app
+function init() {
+  list.innerHTML = '';
+}
+
+init();
+form.addEventListener('submit', addTransaction);

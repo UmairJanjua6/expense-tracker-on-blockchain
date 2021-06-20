@@ -20,13 +20,16 @@ body {
 }
 
 .container {
-  margin: 30px auto;
   width: 350px;
 }
 
 h1 {
   letter-spacing: 1px;
   margin: 0;
+}
+
+h2 {
+  margin-top: 0;
 }
 
 h3 {
