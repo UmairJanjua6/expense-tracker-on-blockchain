@@ -7,30 +7,27 @@ contract ExpenseTracker {
     int256 expense;
     
     event transactionData(uint256 id, string text, int256 amount);
-    event getExpense(int256 expense);
-    event getIncome(int256 income);
-    event getBalance(int256 balance);
     
     struct Transaction {
+        uint256 id;
         string text;
         int256 amount;
     }
     mapping (uint256 => Transaction) transaction;
+    uint256[] indexArr;
     
     function addTransaction(uint256 id, string memory _text, int256 _amount) public returns (bool) {
         transaction[id].text = _text;
         transaction[id].amount = _amount;
+        transaction[id].id = id;
+        indexArr.push(id);
         if(_amount > 0) {
             income = income + _amount;
             balance = balance + _amount;
-            emit getIncome(income);
-            emit getBalance(balance);
         }
         else {
             expense = expense + _amount;
             balance = balance + _amount;
-            emit getExpense(expense);
-            emit getBalance(balance);
         }
         emit transactionData(id, _text, _amount);
         return true;
@@ -47,6 +44,33 @@ contract ExpenseTracker {
             balance = balance - transaction[id].amount;
         }
         delete transaction[id];
+        for(uint256 i= 0; i< indexArr.length; i++) {
+            if(indexArr[i] == id) {
+                indexArr[i] = indexArr[indexArr.length - 1];
+                delete indexArr[indexArr.length - 1];
+                indexArr.pop();
+            }
+        }
         return true;
+    }
+    
+    function getTransaction(uint256 id) public view returns(Transaction memory txData){
+        return transaction[id];
+    }
+    
+    function getBalance() public view returns (int256) {
+        return balance;
+    }
+    
+    function getIncome() public view returns (int256) {
+        return income;
+    }
+    
+    function getExpense() public view returns (int256) {
+        return expense;
+    }
+    
+    function getIndexArray() public view returns(uint256[] memory) {
+        return indexArr;
     }
 }
